@@ -2,7 +2,6 @@ import requests
 from bs4 import BeautifulSoup
 import streamlit as st
 import pandas as pd
-import numpy as np
 
 # [모바일 최적화 세팅] 
 st.set_page_config(page_title="Spravato Tracker", layout="centered")
@@ -48,11 +47,9 @@ st.metric(label="💰 스프라바토 연간 런레이트 매출", value=f"${est
 
 st.markdown("---")
 
-# 4. 🔥 [신규 추가] 미래 12개월 누적 치료 건수 성장 시뮬레이션 그래프
+# 4. 📅 [X축 순서 교정] 미래 12개월 누적 치료 건수 성장 시뮬레이션 그래프
 st.subheader("📅 향후 12개월 누적 치료 건수 예측")
 
-# 매달 치료소가 분기 5%씩 성장한다는 가정 하에 월별 누적 치료 건수 데이터 생성
-months = [f"{i}개월 뒤" for i in range(1, 13)]
 monthly_run_rate = []
 current_centers_sim = live_centers
 
@@ -61,17 +58,18 @@ for month in range(1, 13):
     if month % 3 == 0:
         current_centers_sim *= 1.05
     
-    # 해당 월의 월간 총 치료 건수 계산 (주간 건수 * 4.33주)
+    # 해당 월의 월간 총 치료 건수 계산 (주간 건수 * 4.333주)
     month_sessions = current_centers_sim * avg_sessions * 4.333
     monthly_run_rate.append(int(month_sessions))
 
-# 그래프용 데이터프레임 생성
-chart_data = pd.DataFrame({
+# 그래프용 데이터프레임 생성 (순서가 안 뒤틀리게 컬럼으로 인덱스 분리)
+chart_df = pd.DataFrame({
+    "개월": [f"{i:02d}개월 뒤" for i in range(1, 13)], # '01개월 뒤', '02개월 뒤' 형태로 맞춰 순서 고정
     "추정 월간 치료 건수": monthly_run_rate
-}, index=months)
+})
 
-# 폰 화면에 최적화된 라인 차트 출력
-st.line_chart(chart_data)
+# 스트림릿 차트에서 X축을 '개월'로 지정하여 순서대로 출력
+st.line_chart(chart_df, x="개월", y="추정 월간 치료 건수")
 
 # 컴패스 투자 아이디어 요약 바
 st.success(f"💡 **CMPS 주주용 팁:** 하단의 슬라이더를 움직이면 주간 치료 건수가 바뀌면서, 향후 12개월 동안 병원들이 소화해낼 전체 치료 규모(그래프 기울기)가 실시간으로 연동되어 바뀝니다.")
